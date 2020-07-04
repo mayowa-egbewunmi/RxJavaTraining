@@ -2,6 +2,7 @@ package com.mayowa.android.rxjavatraining.operators.transform_n_combine
 
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 
 /**
  * ConcatMap This operator functions the same way as flatMap(),
@@ -24,16 +25,18 @@ class RxConcatMapDemo  {
         }
     }
 
-    fun getMembersObservable(team: String): Observable<List<String>> {
+    fun getMembersObservable(team: String): Observable<String> {
         val teamMembers = hashMapOf(
             Pair("Mobile", listOf("Jamie", "George")),
             Pair("Platform", listOf("Julia", "Frank")),
             Pair("QA", listOf("Asim"))
         )
-        return Observable.create<List<String>> {
+        return Observable.create<String> {
             teamMembers[team]?.let { members ->
                 if (team == "Platform") Thread.sleep(1000)
-                it.onNext(members)
+                for (name in members) {
+                    it.onNext(name)
+                }
             }
             it.onComplete()
         }
@@ -46,7 +49,9 @@ fun main() {
     val compositeDisposable = CompositeDisposable()
 
     val subscription = rxConcatMapDemo.getTeamsObservable()
+        .subscribeOn(Schedulers.io())
         .concatMap { rxConcatMapDemo.getMembersObservable(it) }
+        .observeOn(Schedulers.single())
         .subscribe {
             println("data = ${it}, thread_name = ${Thread.currentThread().name}")
         }

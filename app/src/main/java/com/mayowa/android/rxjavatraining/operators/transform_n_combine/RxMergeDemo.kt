@@ -2,6 +2,7 @@ package com.mayowa.android.rxjavatraining.operators.transform_n_combine
 
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 
 /**
  * This operator combines multiple Observables into one by merging
@@ -27,9 +28,11 @@ fun main() {
     val compositeDisposable = CompositeDisposable()
 
     val subscription = Observable.merge(
-        rxMergeDemo.firstFiveDigits(),
-        rxMergeDemo.otherDigits()
+        rxMergeDemo.otherDigits(),
+        rxMergeDemo.firstFiveDigits()
     )
+        .subscribeOn(Schedulers.io())
+        .observeOn(Schedulers.single())
         .subscribe({
             println("data = ${it}, thread_name = ${Thread.currentThread().name}")
         }, { error ->

@@ -3,6 +3,7 @@ package com.mayowa.android.rxjavatraining.operators.transform_n_combine
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.functions.BiFunction
+import io.reactivex.schedulers.Schedulers
 
 /**
  * CombineLatest when an item is emitted by either of two Observables,
@@ -14,22 +15,27 @@ import io.reactivex.functions.BiFunction
 class RxCombineLatestDemo {
 
     fun observable1(): Observable<Int> = Observable.create<Int> {
+        Thread.sleep(50)
+
         it.onNext(1)
         Thread.sleep(50)
+
         it.onNext(3)
         Thread.sleep(50)
+
         it.onNext(5)
 
         it.onComplete()
     }
+        .subscribeOn(Schedulers.io())
 
     fun observable2(): Observable<Int> = Observable.create<Int> {
         it.onNext(2)
         it.onNext(4)
         it.onNext(6)
-
         it.onComplete()
     }
+        .subscribeOn(Schedulers.io())
 }
 
 fun main() {
@@ -45,6 +51,7 @@ fun main() {
             data1 + data2
         }
     )
+        .observeOn(Schedulers.single())
         .subscribe({
             println("result = ${it}, thread_name = ${Thread.currentThread().name}")
         }, { error ->

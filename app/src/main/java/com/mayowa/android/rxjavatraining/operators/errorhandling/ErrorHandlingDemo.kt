@@ -5,8 +5,8 @@ import io.reactivex.BackpressureStrategy
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.Single
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
 
 /**
@@ -57,14 +57,18 @@ fun main() {
     val underTest = ErrorHandlingDemo()
 
     val subscription =
-        underTest.testBackPressureException()
-            .observeOn(AndroidSchedulers.mainThread())
+        underTest.testSingleException()
+            .observeOn(Schedulers.single())
+            .map { Result.success(it) }
+            .onErrorReturn { Result.failure(it) }
             .subscribe(
-                {
-                    println("data = $it, thread_name = ${Thread.currentThread().name}")
-                },
-                { error ->
-                    println("Exception occurred but handled: message = ${error.message}")
+                Consumer {
+                    if(it.isSuccess) {
+
+                    } else {
+                        //show dialog
+                    }
+                    println("failure = ${it.isFailure}, success = ${it.isSuccess}, thread_name = ${Thread.currentThread().name}")
                 }
             )
 

@@ -2,6 +2,7 @@ package com.mayowa.android.rxjavatraining.operators.transform_n_combine
 
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 
 /**
  *
@@ -10,7 +11,6 @@ import io.reactivex.disposables.CompositeDisposable
  * which can emit data again. The important difference between FlatMap and
  * other transformation operators is that the order in which the items are emitted is
  * not maintained.
- *
  *
  * TODO: Demo returning the members in a team as a group
  * TODO: Demo returning each member in the team
@@ -28,19 +28,18 @@ class RxFlatMapDemo  {
         }
     }
 
-    fun getMembersObservable(team: String): Observable<List<String>> {
+    fun getMembersObservable(team: String): Observable<String> {
         val teamMembers = hashMapOf(
             Pair("Mobile", listOf("Jamie", "George")),
             Pair("Platform", listOf("Julia", "Frank")),
             Pair("QA", listOf("Asim"))
         )
-        return Observable.create<List<String>> {
+        return Observable.create<String> {
             teamMembers[team]?.let { members ->
                 if (team == "Platform") Thread.sleep(1000)
-                it.onNext(members)
-//                for (name in members) {
-//                    it.onNext(name)
-//                }
+                for (name in members) {
+                    it.onNext(name)
+                }
             }
             it.onComplete()
         }
@@ -53,7 +52,11 @@ fun main() {
     val compositeDisposable = CompositeDisposable()
 
     val subscription = rxFlatMapDemo.getTeamsObservable()
-        .flatMap { rxFlatMapDemo.getMembersObservable(it) }
+        .subscribeOn(Schedulers.io())
+        .flatMap { team ->
+            rxFlatMapDemo.getMembersObservable(team).subscribeOn(Schedulers.io())
+        }
+        .observeOn(Schedulers.single())
         .subscribe {
             println("data = ${it}, thread_name = ${Thread.currentThread().name}")
         }

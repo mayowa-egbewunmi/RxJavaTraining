@@ -31,6 +31,7 @@ class RxSwitchMapDemo  {
             Pair("QA", listOf("Asim"))
         )
         return Observable.create<List<String>> {
+            if (team == "Platform") Thread.sleep(3000)
             teamMembers[team]?.let { members ->
                 it.onNext(members)
             }
@@ -45,7 +46,9 @@ fun main() {
     val compositeDisposable = CompositeDisposable()
 
     val subscription = rxSwitchMapDemo.getTeamsObservable()
-        .switchMap { rxSwitchMapDemo.getMembersObservable(it) }
+        .subscribeOn(Schedulers.io())
+        .switchMap { rxSwitchMapDemo.getMembersObservable(it)
+            .subscribeOn(Schedulers.io())}
         .observeOn(Schedulers.single())
         .subscribe {
             println("data = ${it}, thread_name = ${Thread.currentThread().name}")
