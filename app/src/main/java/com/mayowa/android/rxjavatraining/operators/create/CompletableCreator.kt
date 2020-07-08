@@ -7,7 +7,7 @@ import io.reactivex.functions.Action
 
 /**
  * Completable is useful for operations where we don’t care about the result of the transaction.
- * E.g Cache map tiles offline, Saving a record in DB.
+ * E.g Caching, Saving a record in DB.
  *
  * Completable data stream created via the [Action] functional interface
  *
@@ -29,7 +29,7 @@ class CompletableCreator {
 }
 
 fun main() {
-    println("The application is running on thread called = ${Thread.currentThread().name}")
+    println("The application is running on ${Thread.currentThread().name} thread ")
 
     val underTest = CompletableCreator()
     val compositeDisposable = CompositeDisposable()
@@ -38,7 +38,7 @@ fun main() {
         underTest.testCompletable()
             .subscribe(
                 {
-                    println("Completable onSuccess, thread_name = ${Thread.currentThread().name}")
+                    println("Result observed on ${Thread.currentThread().name} thread")
                 },
                 {
                     error -> error.printStackTrace()

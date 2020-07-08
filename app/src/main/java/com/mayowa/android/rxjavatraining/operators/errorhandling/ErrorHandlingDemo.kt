@@ -1,13 +1,12 @@
 package com.mayowa.android.rxjavatraining.operators.errorhandling
 
 import com.mayowa.android.rxjavatraining.utils.DatabaseClient
-import io.reactivex.BackpressureStrategy
-import io.reactivex.Completable
-import io.reactivex.Flowable
-import io.reactivex.Single
+import com.mayowa.android.rxjavatraining.utils.Result
+import io.reactivex.*
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
+import java.util.concurrent.TimeoutException
 
 /**
  * An unexpected exception is an error whose source is unknown while
@@ -23,52 +22,58 @@ import io.reactivex.schedulers.Schedulers
  *
  * 4. Sometimes we want to log an exception after the data stream has been observed/consumed,
  * where in the rx flow will this be done?
+ *
+ * TODO: Demo onErrorReturnItem, onErrorReturn, onErrorResumeNext, Retry, RetryWhen
  */
+
 class ErrorHandlingDemo {
 
     private val dbClient = DatabaseClient()
 
-    fun testBackPressureException(): Flowable<Int> = Flowable.create<Int>(
-        { emitter ->
-            for (i in 0..9999) {
-                emitter.onNext(i)
-            }
-            emitter.onComplete()
-        },
-        BackpressureStrategy.MISSING
-    )
-        .subscribeOn(Schedulers.io())
-
     fun testCompletableException() = Completable.fromAction {
         dbClient.saveUserName(null)
     }
-        .subscribeOn(Schedulers.io())
 
     fun testSingleException() = Single.fromCallable {
         dbClient.getUser(-1)
     }
+
+    fun fetchTransactionHistory() = Single.fromCallable {
+        throw TimeoutException()
+    }
+
+    fun fetchFromLocalDB() = Single.fromCallable {
+        listOf("#5000 Transfer from Access to GTB",
+            "DSTV subscription", "1000 Recharge card purchase")
+    }
+
+    fun testNumberFormatException() = Observable.just("33A")
+
+    val clickEventStream = Observable.just(Event)
 }
 
 fun main() {
     println("The application is running on thread called = ${Thread.currentThread().name}")
 
     val compositeDisposable = CompositeDisposable()
-
     val underTest = ErrorHandlingDemo()
 
     val subscription =
         underTest.testSingleException()
-            .observeOn(Schedulers.single())
-            .map { Result.success(it) }
-            .onErrorReturn { Result.failure(it) }
+            .retry { count: Int, _: Throwable ->
+                if (count == 3) {
+                    false
+                } else {
+                    println("Retry at $count")
+                    true
+                }
+            }
             .subscribe(
-                Consumer {
-                    if(it.isSuccess) {
-
-                    } else {
-                        //show dialog
-                    }
-                    println("failure = ${it.isFailure}, success = ${it.isSuccess}, thread_name = ${Thread.currentThread().name}")
+                 {
+                    println("failure = ${it?.email}, thread_name = ${Thread.currentThread().name}")
+                },
+                {
+                    it.printStackTrace()
                 }
             )
 
@@ -77,3 +82,6 @@ fun main() {
     compositeDisposable.dispose()
 
 }
+
+object Event
+

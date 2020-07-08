@@ -10,9 +10,6 @@ import io.reactivex.disposables.CompositeDisposable
  * that a result will be returned.E.g Building Offline First System
  * where we check the DB first, if result is not available we fetch remotely
  *
- * The Observer for Completable is CompletableObserver that implements onComplete and onError
- * What happens if the Action invoked throws an exception?
- *
  * TODO: Test implementation without switchIfEmpty
  * TODO: Test implementation with switchIfEmpty
  */

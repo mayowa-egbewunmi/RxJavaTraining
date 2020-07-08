@@ -2,6 +2,8 @@ package com.mayowa.android.rxjavatraining.operators.threading
 
 import io.reactivex.BackpressureStrategy
 import io.reactivex.Flowable
+import io.reactivex.Observable
+import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 
@@ -22,12 +24,14 @@ import io.reactivex.schedulers.Schedulers
  * immediately before subscribe()
  *
  * 5. The subscribeOn thread and the observeOn thread do not block each other
+ *
+ * 6. Demo concurrent operation with flatMapSingle -
  */
 class ThreadDemo {
 
     fun testThreading() = Flowable.create<Int>({ emitter ->
         for (i in 0..5) {
-            println("emitting data    thread_name = ${Thread.currentThread().name}")
+            println("emitting data on ${Thread.currentThread().name} thread")
             emitter.onNext(i)
         }
         emitter.onComplete()
@@ -43,11 +47,20 @@ fun main() {
 
     val subscription =
         underTest.testThreading()
+            .flatMapSingle {
+                Single.fromCallable {
+                    val data = it * 2
+                    println("flatmap on ${Thread.currentThread().name} thread, data = $data")
+                    data
+                }
+                    .subscribeOn(Schedulers.io())
+            }
             .subscribeOn(Schedulers.io())
-            .doOnNext { println("on next thread name = ${Thread.currentThread().name}") }
-            .observeOn(Schedulers.single())
+            .doOnNext {
+                println("do on next side effect running on ${Thread.currentThread().name} thread")
+            }
             .subscribe {
-                println("observed data = $it, thread_name = ${Thread.currentThread().name}\n===================================")
+                println("observed data = $it on ${Thread.currentThread().name} thread\n===================================")
             }
 
     compositeDisposable.add(subscription)

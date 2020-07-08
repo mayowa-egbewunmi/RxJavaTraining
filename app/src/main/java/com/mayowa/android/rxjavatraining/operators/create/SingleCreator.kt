@@ -3,7 +3,10 @@ package com.mayowa.android.rxjavatraining.operators.create
 import com.mayowa.android.rxjavatraining.utils.DatabaseClient
 import com.mayowa.android.rxjavatraining.utils.ProxyUser
 import io.reactivex.Single
+import io.reactivex.SingleObserver
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
+import io.reactivex.functions.Consumer
 
 /**
  * Single is useful from operations where we care about the result of the operation.
@@ -14,37 +17,34 @@ import io.reactivex.disposables.CompositeDisposable
  * The Observer for Single is SingleObserver that implements onSuccess, onError
  * What happens if a null result is returned?
  *
- * TODO: Update the implementation to use Lambda expression
  * TODO: Demonstrate onError implemented and not implemented
  */
-class SingleCreator {
 
-    private val dbClient = DatabaseClient()
+fun main() {
+    val compositeDisposable = CompositeDisposable()
 
-    private fun singleFromCallable(): Single<ProxyUser> = Single.fromCallable {
+    val dbClient = DatabaseClient()
+
+    val singleFromCallable: Single<ProxyUser> = Single.fromCallable {
         dbClient.getUser(-1)
     }
 
-    fun testSingle(): Single<ProxyUser> = singleFromCallable()
-}
+//    val singleObserver = object : SingleObserver<ProxyUser> {
+//
+//        override fun onSuccess(proxyUser: ProxyUser) {
+//            println("data observed = ${proxyUser.fullname}, thread_name = ${Thread.currentThread().name}")
+//        }
+//
+//        override fun onSubscribe(disposable: Disposable) {
+//            compositeDisposable.add(disposable)
+//        }
+//    }
 
-fun main() {
-    println("The application is running on thread called = ${Thread.currentThread().name}")
+    val disposable = singleFromCallable
+         .subscribe(Consumer {
+             println("data observed = ${it.fullname}, thread_name = ${Thread.currentThread().name}")
+         })
 
-    val underTest = SingleCreator()
-    val compositeDisposable = CompositeDisposable()
-
-    val subscription =
-        underTest.testSingle()
-            .subscribe(
-                {
-                    println("data observed = ${it.fullname}, thread_name = ${Thread.currentThread().name}")
-                },
-                {
-                    error -> error.printStackTrace()
-                }
-            )
-
-    compositeDisposable.add(subscription)
+    compositeDisposable.add(disposable)
     compositeDisposable.dispose()
 }

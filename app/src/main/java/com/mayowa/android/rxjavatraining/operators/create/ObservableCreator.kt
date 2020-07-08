@@ -2,8 +2,13 @@ package com.mayowa.android.rxjavatraining.operators.create
 
 import io.reactivex.Observable
 import io.reactivex.ObservableOnSubscribe
+import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import io.reactivex.subjects.PublishSubject
 import java.util.concurrent.TimeUnit
+import java.util.stream.IntStream
+
 
 /**
  * Observable is useful for managing events.
@@ -12,25 +17,15 @@ import java.util.concurrent.TimeUnit
  * Explain the behaviour of the following observable operators
  *
  * never()
- * empty() { MVIVMBaseActivity: Useful for setting default Observable in base classes }
- * throw() { SurveyUseCase: Premise use case: Useful for rethrowing caught exceptions }
- * just() { TaskSync: Useful in an observable chain to continue data flow }
- * interval() { ReactivePermission: Useful for observing changes at interval }
+ * empty() { Useful for setting default Observable in base classes }
+ * error() { Useful for rethrowing caught exceptions }
+ * just() { Useful in an observable chain to continue data flow }
+ * interval() { Useful for observing changes at interval }
  * range()
- * startWith() { SurveyInteractor: Useful to returning deferred result before the actual result in an observable }
+ * startWith() { Useful to returning deferred result before the actual result in an observable }
  *
  */
 class ObservableCreator {
-
-    private val observableSource: Observable<Int> = Observable.create<Int>(ObservableOnSubscribe { emitter ->
-        Thread.sleep(5000)
-        for (i in 0..10) {
-            emitter.onNext(i)
-        }
-        emitter.onComplete()
-    })
-
-    fun hotObservable() = Observable.just("Something")
 
     fun testNever(): Observable<Unit> = Observable.never<Unit>()
 
@@ -42,29 +37,53 @@ class ObservableCreator {
 
     fun testInterval(): Observable<Long> = Observable.interval(1, TimeUnit.SECONDS)
 
-    fun testStartWith(): Observable<Int> = observableSource.startWith(-1)
+    fun testStartWith(): Observable<Long> = Observable.interval(1, TimeUnit.SECONDS).startWith(-1L)
 }
 
 fun main() {
     println("The application is running on thread called = ${Thread.currentThread().name}")
     val compositeDisposable = CompositeDisposable()
-    val underTest = ObservableCreator()
 
+    //HOT Observable
+//    val source = PublishSubject.create<Int>()
+//    compositeDisposable.add(
+//        source
+//            .hide()
+//            .subscribe(
+//                {
+//                    println("data observed = ${it}, thread_name = ${Thread.currentThread().name}")
+//                },
+//                { error ->
+//                    error.printStackTrace()
+//                },
+//                {
+//                    println("Observable completed")
+//                }
+//            )
+//    )
+//    (0..1_000_000).forEach(source::onNext)
+
+    //COLD Observable
+    val coldObservable = Observable.create<Int> { emitter ->
+        for (i in 0..10) {
+            emitter.onNext(i)
+        }
+        emitter.onComplete()
+    }
     compositeDisposable.add(
-        underTest.testRange()
+        coldObservable
             .subscribe(
                 {
                     println("data observed = ${it}, thread_name = ${Thread.currentThread().name}")
                 },
-                {
-                    error -> error.printStackTrace()
+                { error ->
+                    error.printStackTrace()
                 },
                 {
                     println("Observable completed")
                 }
             )
     )
-
     compositeDisposable.dispose()
 }
 
